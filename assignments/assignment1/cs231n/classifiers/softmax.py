@@ -23,6 +23,8 @@ def softmax_loss_naive(W, X, y, reg):
     - gradient with respect to weights W; an array of same shape as W
     """
     # Initialize the loss and gradient to zero.
+    X = X.astype(np.float64)
+    X /= 255.0
     loss = 0.0
     dW = np.zeros_like(W)
 
@@ -66,6 +68,8 @@ def softmax_loss_vectorized(W, X, y, reg):
     Inputs and outputs are the same as softmax_loss_naive.
     """
     # Initialize the loss and gradient to zero.
+    # X = X.astype(np.float64)
+    # X /= 255.0
     loss = 0.0
     dW = np.zeros_like(W)
     num_train = X.shape[0]
@@ -83,41 +87,5 @@ def softmax_loss_vectorized(W, X, y, reg):
 
     dW = np.dot(X.T,ds) + 2 * reg * W
 
-    # num_classes = W.shape[1]
-    # num_train = X.shape[0]
-    # for i in range(num_train):
-    #     scores = X[i].dot(W)
-
-    #     # compute the probabilities in numerically stable way
-    #     scores -= np.max(scores)
-    #     p = np.exp(scores)
-    #     p /= p.sum()  # normalize
-    #     logp = np.log(p)
-    #     loss -= logp[y[i]]  # negative log probability is the loss
-    #     for j in range(W.shape[0]):
-    #         for k in range(num_classes):
-    #             if k == y[i]:
-    #                 dW[j,k] += (p[k] - 1) * X[i,j]
-    #             else:
-    #                 dW[j,k] += p[k] * X[i,j]
-    #############################################################################
-    # TODO:                                                                     #
-    # Implement a vectorized version of the softmax loss, storing the           #
-    # result in loss.                                                           #
-    #############################################################################
-
-
-    #############################################################################
-    # TODO:                                                                     #
-    # Implement a vectorized version of the gradient for the softmax            #
-    # loss, storing the result in dW.                                           #
-    #                                                                           #
-    # Hint: Instead of computing the gradient from scratch, it may be easier    #
-    # to reuse some of the intermediate values that you used to compute the     #
-    # loss.                                                                     #
-    #############################################################################
-
-    # loss = loss / num_train + reg * np.sum(W * W)
-    # dW = dW / num_train + 2 * reg * W # 注意这边是求导完的
 
     return loss, dW
