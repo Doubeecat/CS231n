@@ -144,7 +144,7 @@ class Solver(object):
         if not hasattr(optim, self.update_rule):
             raise ValueError('Invalid update_rule "%s"' % self.update_rule)
         self.update_rule = getattr(optim, self.update_rule)
-
+        # print(f"learing_rate = %e"%self.learning_rate)
         self._reset()
 
     def _reset(self):
@@ -227,7 +227,6 @@ class Solver(object):
         - acc: Scalar giving the fraction of instances that were correctly
           classified by the model.
         """
-
         # Maybe subsample the data
         N = X.shape[0]
         if num_samples is not None and N > num_samples:

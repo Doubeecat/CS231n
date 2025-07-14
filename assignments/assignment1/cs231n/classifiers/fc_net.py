@@ -55,10 +55,14 @@ class TwoLayerNet(object):
         # weights and biases using the keys 'W2' and 'b2'.                         #
         ############################################################################
 
+        self.params['W1'] = np.random.normal(loc = 0,scale = weight_scale,size = (input_dim,hidden_dim))
+        self.params['b1'] = np.zeros((hidden_dim,))
+        self.params['W2'] = np.random.normal(loc = 0,scale = weight_scale,size = (hidden_dim,num_classes))
+        self.params['b2'] = np.zeros((num_classes,))
+        
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
-
     def loss(self, X, y=None):
         """
         Compute loss and gradient for a minibatch of data.
@@ -83,7 +87,17 @@ class TwoLayerNet(object):
         # TODO: Implement the forward pass for the two-layer net, computing the    #
         # class scores for X and storing them in the scores variable.              #
         ############################################################################
+        
+        W1 = self.params['W1']
+        b1 = self.params['b1']
+        W2 = self.params['W2']
+        b2 = self.params['b2']
 
+        af1_out,af1_cache = affine_forward(X,W1,b1)
+        relu_out,relu_cache = relu_forward(af1_out)
+        af2_out,af2_cache = affine_forward(relu_out,W2,b2)
+        scores = af2_out
+        # 接下来就对scores softmax?
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -103,10 +117,27 @@ class TwoLayerNet(object):
         # automated tests, make sure that your L2 regularization includes a factor #
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
-
+        
+        # softmax_loss
+        loss,daf2_out = softmax_loss(af2_out,y)
+        loss += self.reg * 0.5 * (np.sum(W1 * W1) +np.sum(W2 * W2))
+        d_relu_out,dW2,db2 = affine_backward(daf2_out,af2_cache)
+        d_af1_out = relu_backward(d_relu_out,relu_cache)
+        dX,dW1,db1 = affine_backward(d_af1_out,af1_cache)
+        grads = {
+            'W1': dW1 + self.reg * W1,
+            'b1': db1.reshape(b1.shape),  # 显式匹配形状
+            'W2': dW2 + self.reg * W2,
+            'b2': db2.reshape(b2.shape)
+        }
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
+        # 在loss函数末尾添加
+        # assert grads['W1'].shape == self.params['W1'].shape
+        # assert grads['b1'].shape == self.params['b1'].shape  # 检查b1是(h_dim,)不是(1,h_dim)
+        # assert grads['W2'].shape == self.params['W2'].shape
+        # assert grads['b2'].shape == self.params['b2'].shape  # 检查b2是(c_dim,)不是(1,c_dim)
 
         return loss, grads
 
