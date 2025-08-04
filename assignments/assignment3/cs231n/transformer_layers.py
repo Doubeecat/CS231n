@@ -27,6 +27,7 @@ class PositionalEncoding(nn.Module):
         assert embed_dim % 2 == 0
         # Create an array with a "batch dimension" of 1 (which will broadcast
         # across all examples in the batch).
+
         pe = torch.zeros(1, max_len, embed_dim)
         ############################################################################
         # TODO: Construct the positional encoding array as described in            #
@@ -38,8 +39,13 @@ class PositionalEncoding(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
-
+        pos = torch.arange(max_len).unsqueeze(1)
+        div = 10000.0 ** (-torch.arange(0, embed_dim, 2) / embed_dim)
+        # print(pos,div)
+        pe[0,:,0::2] = torch.sin(pos * div)
+        pe[0,:,1::2] = torch.cos(pos * div)
+        # pe.unsqueeze(1)
+        # print(pe,pe.shape)
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -70,8 +76,8 @@ class PositionalEncoding(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
-
+        output = x + self.pe[0,:S,:]
+        output = self.dropout(output)
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -165,7 +171,59 @@ class MultiHeadAttention(nn.Module):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        # H = self.n_head
+        # Q = self.query(query)
+        # K = self.key(key)
+        # V = self.value(value)
+        # D = self.head_dim
+        # Q = Q.view(N,S,H,D).transpose(1,2) # (N,H,S,E//H)
+        # K = K.view(N,T,H,D).transpose(1,2) # (N,H,T,E//H)
+        # V = V.view(N,T,H,D).transpose(1,2) # (N,H,T,E//H)
+
+        # scores = torch.matmul(Q,K.transpose(-2,-1)) / math.sqrt(self.head_dim)
+        # if attn_mask is not None:            
+        #   # scores = scores.masked_fill(attn_mask.unsqueeze(0).unsqueeze(1) == 0, float('-inf'))
+        #   scores = scores.masked_fill(attn_mask == 0,float('-inf'))
+        # attention_value = torch.softmax(scores,dim = 3)
+        # attention_value = self.attn_drop(attention_value)
+
+        # context = attention_value.matmul(V)
+        # context = context.transpose(1,2).reshape(N,S,E)
+        # output = self.proj(context)
+        
+        H = self.n_head
+        D = self.head_dim
+
+        # 1. 线性投影
+        Q = self.query(query)
+        K = self.key(key)
+        V = self.value(value)
+
+        # 2. 拆分多头
+        Q = Q.view(N, S, H, D).transpose(1, 2) # (N, H, S, D)
+        K = K.view(N, T, H, D).transpose(1, 2) # (N, H, T, D)
+        V = V.view(N, T, H, D).transpose(1, 2) # (N, H, T, D)
+
+        # 3. 计算缩放点积注意力
+        scores = torch.matmul(Q, K.transpose(-2, -1)) / math.sqrt(D)
+
+        # 4. 应用 mask
+        if attn_mask is not None:
+            # 将 mask 扩展到 (1, 1, S, T) 以便广播
+            scores = scores.masked_fill(attn_mask.unsqueeze(0).unsqueeze(1) == 0, float('-inf'))
+
+        # 5. Softmax + Dropout
+        attn = torch.softmax(scores, dim=-1)
+        attn = self.attn_drop(attn)
+
+        # 6. 加权求和
+        context = torch.matmul(attn, V) # (N, H, S, D)
+
+        # 7. 合并多头
+        context = context.transpose(1, 2).contiguous().view(N, S, E)
+
+        # 8. 最终线性投影
+        output = self.proj(context)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
